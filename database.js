@@ -1,4 +1,7 @@
-export const user = "postgres";
-export const password = "Letmein1234";
-export const host = "localhost";
-export const database = "nextbnb";
+const Database = {
+  user: "postgres",
+  password: "Letmein1234",
+  host: "localhost",
+  database: "nextbnb",
+};
+module.exports = Database;
