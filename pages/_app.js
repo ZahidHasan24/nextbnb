@@ -1,11 +1,12 @@
 import App from "next/app";
-import { StoreProvider } from "easy-peasy";
+import { StoreProvider, useStoreActions } from "easy-peasy";
 import store from "../store";
 
 function MyApp({ Component, pageProps, user }) {
   if (user) {
     store.getActions().user.setUser(user);
   }
+
   return (
     <StoreProvider store={store}>
       <Component {...pageProps} />
@@ -14,7 +15,9 @@ function MyApp({ Component, pageProps, user }) {
 }
 
 MyApp.getInitialProps = async (appContext) => {
+  // calls page's `getInitialProps` and fills `appProps.pageProps`
   const appProps = await App.getInitialProps(appContext);
+
   let user = null;
   if (
     appContext.ctx.req &&
@@ -24,6 +27,7 @@ MyApp.getInitialProps = async (appContext) => {
   ) {
     user = appContext.ctx.req.session.passport.user;
   }
+
   return { ...appProps, user: user };
 };
 
