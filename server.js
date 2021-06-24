@@ -25,6 +25,8 @@ Booking.sync({ alter: true });
 
 const sequelize = require("./database.js");
 
+const Op = require("sequelize").Op;
+
 const sessionStore = new SequelizeStore({
   db: sequelize,
 });
@@ -179,6 +181,73 @@ nextApp.prepare().then(() => {
     );
   });
 
+  server.post("/api/houses/reserve", (req, res) => {
+    const userEmail = req.session.passport.user;
+    User.findOne({ where: { email: userEmail } }).then((user) => {
+      Booking.create({
+        houseId: req.body.houseId,
+        userId: user.id,
+        startDate: req.body.startDate,
+        endDate: req.body.endDate,
+      }).then(() => {
+        res.writeHead(200, {
+          "Content-Type": "application/json",
+        });
+        res.end(JSON.stringify({ status: "success", message: "ok" }));
+      });
+    });
+  });
+
+  /**/
+  const getDatesBetweenDates = (startDate, endDate) => {
+    let dates = [];
+    while (startDate < endDate) {
+      dates = [...dates, new Date(startDate)];
+      startDate.setDate(startDate.getDate() + 1);
+    }
+    dates = [...dates, endDate];
+    return dates;
+  };
+
+  server.get("/api/houses/booked", async (req, res) => {
+    const houseId = req.body.houseId;
+
+    const results = await Booking.findAll({
+      where: {
+        houseId: houseId,
+        endDate: {
+          [Op.gte]: new Date(),
+        },
+      },
+    });
+
+    let bookedDates = [];
+
+    for (const result of results) {
+      const dates = getDatesBetweenDates(
+        new Date(result.startDate),
+        new Date(result.endDate)
+      );
+
+      bookedDates = [...bookedDates, ...dates];
+    }
+
+    //remove duplicates
+    bookedDates = [...new Set(bookedDates.map((date) => date))];
+
+    res.writeHead(200, {
+      "Content-Type": "application/json",
+    });
+
+    res.end(
+      JSON.stringify({
+        status: "success",
+        message: "ok",
+        dates: bookedDates,
+      })
+    );
+  });
+
   server.get("/api/houses/:id", (req, res) => {
     const { id } = req.params;
 
@@ -219,23 +288,6 @@ nextApp.prepare().then(() => {
         "Content-Type": "application/json",
       });
       res.end(JSON.stringify(houses));
-    });
-  });
-
-  server.post("/api/houses/reserve", (req, res) => {
-    const userEmail = req.session.passport.user;
-    User.findOne({ where: { email: userEmail } }).then((user) => {
-      Booking.create({
-        houseId: req.body.houseId,
-        userId: user.id,
-        startDate: req.body.startDate,
-        endDate: req.body.endDate,
-      }).then(() => {
-        res.writeHead(200, {
-          "Content-Type": "application/json",
-        });
-        res.end(JSON.stringify({ status: "success", message: "ok" }));
-      });
     });
   });
 
