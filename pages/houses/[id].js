@@ -38,6 +38,26 @@ const getBookedDates = async (houseId) => {
   }
 };
 
+const canReserve = async (houseId, startDate, endDate) => {
+  try {
+    const response = await axios.post(
+      "http://localhost:3000/api/houses/check",
+      { houseId, startDate, endDate }
+    );
+    if (response.data.status === "error") {
+      alert(response.data.message);
+      return;
+    }
+    if (response.data.status === "busy") {
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error(error);
+    return;
+  }
+};
+
 const House = (props) => {
   const [startDate, setStartDate] = useState();
   const [endDate, setEndDate] = useState();
@@ -52,6 +72,10 @@ const House = (props) => {
   const user = useStoreState((state) => state.user.user);
 
   const reserveHouseFn = async () => {
+    if (!(await canReserve(props.house.id, startDate, endDate))) {
+      alert("The dates chosen are not valid");
+      return;
+    }
     try {
       const response = await axios.post("/api/houses/reserve", {
         houseId: props.house.id,
@@ -161,11 +185,11 @@ House.getInitialProps = async ({ query }) => {
   const res = await fetch(`http://localhost:3000/api/houses/${id}`);
   const house = await res.json();
 
-  const bookedDates = await getBookedDates(id)
+  const bookedDates = await getBookedDates(id);
 
   return {
     house,
-    bookedDates
+    bookedDates,
   };
 };
 
