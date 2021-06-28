@@ -30,9 +30,13 @@ const today = new Date();
 const tomorrow = new Date(today);
 tomorrow.setDate(tomorrow.getDate() + 1);
 
-const DateRangePicker = ({ datesChanged }) => {
+const DateRangePicker = ({ datesChanged, bookedDates }) => {
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(tomorrow);
+
+  bookedDates = bookedDates.map((date) => {
+    return new Date(date);
+  });
 
   return (
     <div className="date-range-picker-container">
@@ -46,9 +50,12 @@ const DateRangePicker = ({ datesChanged }) => {
           placeholder={`${dateFnsFormat(new Date(), format)}`}
           dayPickerProps={{
             modifiers: {
-              disabled: {
-                before: new Date(),
-              },
+              disabled: [
+                ...bookedDates,
+                {
+                  before: new Date(),
+                },
+              ],
             },
           }}
           onDayChange={(day) => {
@@ -74,6 +81,7 @@ const DateRangePicker = ({ datesChanged }) => {
             modifiers: {
               disabled: [
                 startDate,
+                ...bookedDates,
                 {
                   before: startDate,
                 },
